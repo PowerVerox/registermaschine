@@ -21,6 +21,8 @@ ganz unten in `~/.bashrc` einfügen:
 
 `eval "$(pyenv virtualenv-init -)"`
 
+python version installieren:
+`pyenv install 3.12.4`
 
 ## Quellen: 
 https://link.springer.com/content/pdf/10.1007/978-3-322-82204-8.pdf
