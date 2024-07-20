@@ -4,7 +4,7 @@
 
 ## Ablauf ausführen
 
-1. textdatei speichern mit registermaschine befehlen
+1. Textdatei speichern mit registermaschine befehlen
 2. einlesen in list (man kann direkt mit den index zum befehl springen usw (instruction[5]))
 3. wenn syntax_check kein fehler
 4. programmcounter hoch, erste zeile lesen --> befehlsfunktion ausführen (switch case oder wie macht man das??)
