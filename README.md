@@ -8,6 +8,18 @@
 1. programmcounter hoch, erste zeile lesen --> befehlsfunktion ausführen (switch case oder wie macht man das??)
 
 
+## pyenv installieren
+ausführen:
+
+`curl https://pyenv.run | bash`
+
+ganz unten in `~/.bashrc` einfügen:
+
+`export PATH="$HOME/.pyenv/bin:$PATH"`
+
+`eval "$(pyenv init --path)"`
+
+`eval "$(pyenv virtualenv-init -)"`
 
 
 ## Quellen: 
