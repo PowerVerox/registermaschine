@@ -23,13 +23,16 @@
 | Class Instruction       |
 | ----------------------- |
 | data : str              |
+| ----------------------- |
+| toString() -> str       |
 
 | Class Program               |
 | --------------------------- |
 | instructions: Instruction[] |
 | --------------------------- |
-| load(path: str)             |
+| load(path: str) -> Program  |
 | ~~verify()~~                |
+| toString() -> str           |
 
 | Class Registermachine       |
 | --------------------------- |
@@ -37,7 +40,8 @@
 | *programcounter: int*       |
 | memory: bytearray           |
 | --------------------------- |
-| run(program)                |
+| run(program) -> void        |
+| toString() -> str           |
 
 ## Anmerkungen
 
