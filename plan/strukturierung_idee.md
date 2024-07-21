@@ -43,6 +43,7 @@
 
 In STP gibt es einen Context, der einen Ausdruck evaluiert.
 Jeweils als Klassen/Interfaces implementiert.
+Der Context entspricht einem Scope / Ausführungsblock in einer "richtigen" Sprache.
 Der Kontext würde hier wohl der Registermaschine entsprechen.
 Ich würde daher vorschlagen, dass run() die komplette Evaluierung übernimmt.
 Statt Switch-Case nutze ich in STP benannte Lambdas.
