@@ -29,38 +29,20 @@ class Operator(StrEnum):
     INDMULT = auto()
     INDDIV = auto()
 
-SIMPLE_INSTRUCTIONS = [
-    'LOAD',
-    'STORE',
-    'ADD',
-    'SUB',
-    'MULT',
-    'DIV',
-    'CLOAD',
-    'CADD',
-    'CSUB',
-    'CMULT',
-    'CDIV',
-    'INDLOAD',
-    'INDSTORE',
-    'INDADD',
-    'INDSUB',
-    'INDMULT',
-    'INDDIV'
-]
+
 
 class Instruction:
     def __init__(self, operator: Operator, operand: int):
-        self.operator = operator
+        self.operator: Operator = operator
         self.operand = operand
 
-    def __repr__(self):
+    def __str__(self) -> str:
         op = self.operator
         match op:
             case Operator.END:
-                return 'END'
+                return Operator.END.value
             case Operator.IF_EQ | Operator.IF_GE | Operator.IF_GT | Operator.IF_LE | Operator.IF_LT:
-                comparator = '<ERROR>'
+                comparator = '<ERROR>' #TODO find ich bisschen komisch, vllt ueberarbeiten
                 match op:
                     case Operator.IF_EQ:
                         comparator = '='
@@ -70,29 +52,30 @@ class Instruction:
                         comparator = '<='
                     case Operator.IF_GT:
                         comparator = '>'
-                    case Operator.IF_GE:
+                    case Operator.IF_GE: 
                         comparator = '>='
-                return f'IF {comparator} {repr(self.operand)}'                   
+                return f'IF {comparator} {str(self.operand)}'                   
             case _:
-                return str(self.operator).replace('_', ' ').upper() + ' ' + repr(self.operand)
+                return self.operator.replace('_', ' ') + ' ' + str(self.operand)
     
     def from_string(source: str) -> Result[Self, str]:
+        #split source
         parts = source.split(' ')
-        operator = parts[0].upper()
+        operator = parts[0].lower()
         part1 = ''
         part2 = ''
         try:
-            part1 = parts[1].upper()
+            part1 = parts[1].lower()
         except IndexError:
-            part1 = 'NONE'
+            part1 = Operator.NONE
         try:
-            part2 = parts[2].upper()
+            part2 = parts[2].lower()
         except IndexError:
-            part2 = 'NONE'
+            part2 = Operator.NONE
         match operator:
             case '':
                 return Ok(Instruction(Operator.NONE, 0))
-            case operator if operator in SIMPLE_INSTRUCTIONS:
+            case operator if operator in Operator:
                 operand = 0
                 try:
                     operand = int(part1)
@@ -120,7 +103,7 @@ class Instruction:
                 try:
                     operand = int(part2)
                 except ValueError:
-                    if part2 == 'NONE':
+                    if part2 == Operator.NONE:
                         return Err(f'IF-Statements expect a comparator and a comparison value')
                     return Err(f'Operand {part2} is not an integer')
                 mode = part1
@@ -137,7 +120,7 @@ class Instruction:
                         return Ok(Instruction(Operator.IF_GE, operand))
                     case _:
                         return Err(f'Comparator {part1} is invalid')
-            case 'END':
+            case Operator.END:
                 return Ok(Instruction(Operator.END, 0))
             case _:
                 return Err(f'Operator {operator} is invalid')
