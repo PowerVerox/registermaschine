@@ -1,6 +1,5 @@
+from __future__ import annotations
 from enum import auto, StrEnum
-from result import Result, Ok, Err
-from typing import Self
 
 class Operator(StrEnum):
     NONE = auto() # No operation, empty statement
@@ -29,7 +28,14 @@ class Operator(StrEnum):
     INDMULT = auto()
     INDDIV = auto()
 
+class InvalidOperand(Exception):
+    pass
 
+class InvalidOperator(Exception):
+    pass
+
+class InvalidSyntax(Exception):
+    pass
 
 class Instruction:
     def __init__(self, operator: Operator, operand: int):
@@ -58,7 +64,8 @@ class Instruction:
             case _:
                 return self.operator.replace('_', ' ') + ' ' + str(self.operand)
     
-    def from_string(source: str) -> Result[Self, str]:
+    @staticmethod
+    def from_string(source: str) -> Instruction:
         #split source
         parts = source.split(' ')
         operator = parts[0].lower()
@@ -74,53 +81,53 @@ class Instruction:
             part2 = Operator.NONE
         match operator:
             case '':
-                return Ok(Instruction(Operator.NONE, 0))
+                return Instruction(Operator.NONE, 0)
             case operator if operator in Operator:
                 operand = 0
                 try:
                     operand = int(part1)
                 except ValueError:
-                    return Err(f'Operand {part1} is not an integer')
-                return Ok(Instruction(operator, operand))
+                    raise InvalidOperand(f'Operand {part1} is not an integer')
+                return Instruction(operator, operand)
             case 'GO':
                 if part1 == 'TO':
                     operand = 0
                     try:
                         operand = int(part2)
                     except ValueError:
-                        return Err(f'Operand {part2} is not an integer')
-                    return Ok(Instruction(Operator.GO_TO, operand))
-                return Err('Expected TO after GO')
+                        raise InvalidOperand(f'Operand {part2} is not an integer')
+                    return Instruction(Operator.GO_TO, operand)
+                raise InvalidSyntax('Expected TO after GO')
             case 'GOTO':
                 operand = 0
                 try:
                     operand = int(part1)
                 except ValueError:
-                    return Err(f'Operand {part1} is not an integer')
-                return Ok(Instruction(Operator.GO_TO, operand))
+                    raise InvalidOperand(f'Operand {part1} is not an integer')
+                return Instruction(Operator.GO_TO, operand)
             case 'IF':
                 operand = 0
                 try:
                     operand = int(part2)
                 except ValueError:
                     if part2 == Operator.NONE:
-                        return Err(f'IF-Statements expect a comparator and a comparison value')
-                    return Err(f'Operand {part2} is not an integer')
+                        raise InvalidSyntax(f'IF-Statements expect a comparator and a comparison value')
+                    raise InvalidOperand(f'Operand {part2} is not an integer')
                 mode = part1
                 match mode:
                     case '=':
-                        return Ok(Instruction(Operator.IF_EQ, operand))
+                        return Instruction(Operator.IF_EQ, operand)
                     case '<':
-                        return Ok(Instruction(Operator.IF_LT, operand))
+                        return Instruction(Operator.IF_LT, operand)
                     case '<=':
-                        return Ok(Instruction(Operator.IF_LE, operand))
+                        return Instruction(Operator.IF_LE, operand)
                     case '>':
-                        return Ok(Instruction(Operator.IF_GT, operand))
+                        return Instruction(Operator.IF_GT, operand)
                     case '>=':
-                        return Ok(Instruction(Operator.IF_GE, operand))
+                        return Instruction(Operator.IF_GE, operand)
                     case _:
-                        return Err(f'Comparator {part1} is invalid')
+                        raise InvalidOperand(f'Comparator {part1} is invalid')
             case Operator.END:
-                return Ok(Instruction(Operator.END, 0))
+                return Instruction(Operator.END, 0)
             case _:
-                return Err(f'Operator {operator} is invalid')
+                raise InvalidOperator(f'Operator {operator} is invalid')
