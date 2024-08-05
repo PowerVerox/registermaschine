@@ -80,7 +80,7 @@ class Instruction:
                         comparator = '>'
                     case Operator.IF_GE: 
                         comparator = '>='
-                return f'IF {comparator} {str(self.operand)}'                   
+                return f'if {comparator} {str(self.operand)}'                   
             case _:
                 return self.operator.replace('_', ' ') + ' ' + str(self.operand)
     
@@ -109,8 +109,8 @@ class Instruction:
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
                 return Instruction(operator, operand)
-            case 'GO':
-                if part1 == 'TO':
+            case 'go':
+                if part1 == 'to':
                     operand = 0
                     try:
                         operand = int(part2)
@@ -118,14 +118,14 @@ class Instruction:
                         raise InvalidOperand(f'Operand {part2} is not an integer')
                     return Instruction(Operator.GO_TO, operand)
                 raise InvalidSyntax('Expected TO after GO')
-            case 'GOTO':
+            case 'goto':
                 operand = 0
                 try:
                     operand = int(part1)
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
                 return Instruction(Operator.GO_TO, operand)
-            case 'IF':
+            case 'if':
                 operand = 0
                 try:
                     operand = int(part2)

@@ -2,6 +2,9 @@ from __future__ import annotations
 from program import *
 from typing import Callable
 
+class MachineRuntimeError(Exception):
+    pass
+
 class Machine:
     def __init__(self):
         self.instruction_set: dict[Operator, Callable[[Machine, int], Machine]] = {}
@@ -30,6 +33,20 @@ class Machine:
     
     def end(self) -> Machine:
         self.should_continue = False
+        return self
+    
+    def set_pc(self, value: int) -> Machine:
+        if value < 0:
+            raise MachineRuntimeError('Programcounter is non-negative')
+        self.programcounter = value
+        return self
+    
+    def inc_pc(self, value: int) -> Machine:
+        self.programcounter += value
+        return self
+    
+    def out(self, value: int) -> Machine:
+        print(f'Out: {value}')
         return self
     
     def run(self, program: Program) -> Machine:
