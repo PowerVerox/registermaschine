@@ -28,6 +28,26 @@ class Operator(StrEnum):
     INDMULT = auto()
     INDDIV = auto()
 
+SIMPLE_INSTRUCTIONS = [
+    'load',
+    'store',
+    'add',
+    'sub',
+    'mult',
+    'div',
+    'cload',
+    'cadd',
+    'csub',
+    'cmult',
+    'cdiv',
+    'indload',
+    'indstore',
+    'indadd',
+    'indsub',
+    'indmult',
+    'inddiv'
+]
+
 class InvalidOperand(Exception):
     pass
 
@@ -82,7 +102,7 @@ class Instruction:
         match operator:
             case '':
                 return Instruction(Operator.NONE, 0)
-            case operator if operator in Operator:
+            case operator if operator in SIMPLE_INSTRUCTIONS:
                 operand = 0
                 try:
                     operand = int(part1)

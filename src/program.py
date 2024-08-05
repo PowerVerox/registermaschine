@@ -9,7 +9,10 @@ class Program:
             self.instructions = instructions
 
     def __str__(self) -> str:
-        return self.instructions.__str__()
+        strings = []
+        for e in self.instructions:
+            strings.append(e.__str__())
+        return '['+ ', '.join(strings) + ']'
 
     @staticmethod
     def from_string(source: str) -> Program:
@@ -27,5 +30,8 @@ class Program:
     # Mit Indexoperator kann direkt auf den n. Befehl zugegriffen werden
     def __getitem__(self, key) -> Instruction:
         return self.instructions[key]
+    
+    def size(self) -> int:
+        return len(self.instructions)
 
     
