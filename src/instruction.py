@@ -10,8 +10,9 @@ class Operator(StrEnum):
     MULT = auto()
     DIV = auto()
     END = auto()
-    GO_TO = auto()
+    GOTO = auto()
     IF_EQ = auto()
+    IF_NE = auto()
     IF_LT = auto()
     IF_LE = auto()
     IF_GT = auto()
@@ -35,6 +36,7 @@ SIMPLE_INSTRUCTIONS = [
     'sub',
     'mult',
     'div',
+    'goto',
     'cload',
     'cadd',
     'csub',
@@ -57,6 +59,9 @@ class InvalidOperator(Exception):
 class InvalidSyntax(Exception):
     pass
 
+def canonicalize(string: str) -> str:
+    return string.lower().replace('\\s+', ' ').lstrip().rstrip()
+
 class Instruction:
     def __init__(self, operator: Operator, operand: int):
         self.operator: Operator = operator
@@ -68,10 +73,12 @@ class Instruction:
             case Operator.END:
                 return Operator.END.value
             case Operator.IF_EQ | Operator.IF_GE | Operator.IF_GT | Operator.IF_LE | Operator.IF_LT:
-                comparator = '<ERROR>' #TODO find ich bisschen komisch, vllt ueberarbeiten
+                comparator = '?' #TODO find ich bisschen komisch, vllt ueberarbeiten
                 match op:
                     case Operator.IF_EQ:
                         comparator = '='
+                    case Operator.IF_NE:
+                        comparator = '!='
                     case Operator.IF_LT:
                         comparator = '<'
                     case Operator.IF_LE:
@@ -87,16 +94,16 @@ class Instruction:
     @staticmethod
     def from_string(source: str) -> Instruction:
         #split source
-        parts = source.split(' ')
-        operator = parts[0].lower()
+        parts = canonicalize(source).split(' ')
+        operator = parts[0]
         part1 = ''
         part2 = ''
         try:
-            part1 = parts[1].lower()
+            part1 = parts[1]
         except IndexError:
             part1 = Operator.NONE
         try:
-            part2 = parts[2].lower()
+            part2 = parts[2]
         except IndexError:
             part2 = Operator.NONE
         match operator:
@@ -109,22 +116,13 @@ class Instruction:
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
                 return Instruction(operator, operand)
-            case 'go':
-                if part1 == 'to':
-                    operand = 0
-                    try:
-                        operand = int(part2)
-                    except ValueError:
-                        raise InvalidOperand(f'Operand {part2} is not an integer')
-                    return Instruction(Operator.GO_TO, operand)
-                raise InvalidSyntax('Expected TO after GO')
             case 'goto':
                 operand = 0
                 try:
                     operand = int(part1)
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
-                return Instruction(Operator.GO_TO, operand)
+                return Instruction(Operator.GOTO, operand)
             case 'if':
                 operand = 0
                 try:
@@ -137,6 +135,8 @@ class Instruction:
                 match mode:
                     case '=':
                         return Instruction(Operator.IF_EQ, operand)
+                    case '!=':
+                        return Instruction(Operator.IF_NE, operand)
                     case '<':
                         return Instruction(Operator.IF_LT, operand)
                     case '<=':

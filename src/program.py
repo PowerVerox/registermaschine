@@ -16,14 +16,14 @@ class Program:
 
     @staticmethod
     def from_string(source: str) -> Program:
-        lines = source.lower().replace("go", "\ngo").splitlines()
+        lines = source.lower().replace("go to", "goto").splitlines()
         instructions: list[Instruction] = []
         for l in lines:
             instructions.append(Instruction.from_string(l))
         return Program(instructions)
 
     @staticmethod
-    def from_file(path: str = "prog.ram") -> Program:
+    def from_file(path: str = 'prog.ram') -> Program:
         with open(path, "r") as program_file:
             return Program.from_string(program_file.read())
         
