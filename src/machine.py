@@ -68,6 +68,7 @@ class Machine:
                 self.instruction_set[instruction.operator](self, instruction.operand)
             except KeyError:
                 raise MachineRuntimeError(f'Instruction {instruction.operator} is undefined')
+            # TODO: Die Lambdas koennen Fehler erzeugen (invalider Speicherzugriff u.a)
             # Befehlszaehler inkrementieren
             self.programcounter += 1
         return self
@@ -79,28 +80,39 @@ class Machine:
         return self.run_program(Program.from_string(code))
 
     def add_math(self) -> Machine:
-        self.add_fn(Operator.LOAD, fn = (lambda m, v: m.set(0, v)))
-        self.add_fn(Operator.STORE, fn = (lambda m, v: m.set(v, m.get(0))))
-        self.add_fn(Operator.ADD, fn = (lambda m, v: m.set(0, m.get(0) + v)))
-        self.add_fn(Operator.SUB, fn = (lambda m, v: m.set(0, m.get(0) - v)))
-        self.add_fn(Operator.MULT, fn = (lambda m, v: m.set(0, m.get(0) * v)))
-        self.add_fn(Operator.DIV, fn = (lambda m, v: m.set(0, m.get(0) / v)))
+        self.add_fn(Operator.LOAD, fn = (lambda m, i: m.set(0, m.get(i))))
+        self.add_fn(Operator.STORE, fn = (lambda m, i: m.set(i, m.get(0))))
+        self.add_fn(Operator.ADD, fn = (lambda m, i: m.set(0, m.get(0) + m.get(i))))
+        self.add_fn(Operator.SUB, fn = (lambda m, i: m.set(0, m.get(0) - m.get(i))))
+        self.add_fn(Operator.MULT, fn = (lambda m, i: m.set(0, m.get(0) * m.get(i))))
+        self.add_fn(Operator.DIV, fn = (lambda m, i: m.set(0, m.get(0) / m.get(i))))
         return self
     
     def add_jumps(self) -> Machine:
-        self.add_fn(Operator.GOTO, fn = (lambda m, v: m.set_pc(v-1)))
-        self.add_fn(Operator.IF_EQ, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) == v))))
-        self.add_fn(Operator.IF_NE, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) != v))))
-        self.add_fn(Operator.IF_LT, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) < v))))
-        self.add_fn(Operator.IF_LE, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) <= v))))
-        self.add_fn(Operator.IF_GT, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) > v))))
-        self.add_fn(Operator.IF_GE, fn = (lambda m, v: m.inc_pc(nbool_to_int(m.get(0) >= v))))
+        self.add_fn(Operator.GOTO, fn = (lambda m, i: m.set_pc(i-1)))
+        self.add_fn(Operator.IF_EQ, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) == i))))
+        self.add_fn(Operator.IF_NE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) != i))))
+        self.add_fn(Operator.IF_LT, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) < i))))
+        self.add_fn(Operator.IF_LE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) <= i))))
+        self.add_fn(Operator.IF_GT, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) > i))))
+        self.add_fn(Operator.IF_GE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) >= i))))
         return self
     
     def add_constants(self) -> Machine:
+        self.add_fn(Operator.CLOAD, fn = (lambda m, i: m.set(0, i)))
+        self.add_fn(Operator.CADD, fn = (lambda m, i: m.set(0, m.get(0) + i)))
+        self.add_fn(Operator.CSUB, fn = (lambda m, i: m.set(0, m.get(0) - i)))
+        self.add_fn(Operator.CMULT, fn = (lambda m, i: m.set(0, m.get(0) * i)))
+        self.add_fn(Operator.CDIV, fn = (lambda m, i: m.set(0, m.get(0) / i)))
         return self
     
     def add_indirections(self) -> Machine:
+        self.add_fn(Operator.INDLOAD, fn = (lambda m, i: m.set(0, m.get(m.get(i)))))
+        self.add_fn(Operator.INDSTORE, fn = (lambda m, i: m.set(m.get(i), m.get(0))))
+        self.add_fn(Operator.INDADD, fn = (lambda m, i: m.set(0, m.get(0) + m.get(m.get(i)))))
+        self.add_fn(Operator.INDSUB, fn = (lambda m, i: m.set(0, m.get(0) - m.get(m.get(i)))))
+        self.add_fn(Operator.INDMULT, fn = (lambda m, i: m.set(0, m.get(0) * m.get(m.get(i)))))
+        self.add_fn(Operator.INDDIV, fn = (lambda m, i: m.set(0, m.get(0) / m.get(m.get(i)))))
         return self
     
     def add_standard_instructions(self) -> Machine:

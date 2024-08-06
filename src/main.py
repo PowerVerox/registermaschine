@@ -3,13 +3,15 @@ from machine import *
 
 #prompt = "> "
 
-Machine().add_standard_instructions().print().run_code("""LOAD 41
-IF != 42
-GO TO 5
-LOAD 420
-END
+#Machine().add_standard_instructions().run_code("""CLOAD 41
+#IF != 42
+#GO TO 5
+#CLOAD 420
+#END
+#
+#CLOAD 69
+#END
+#
+#""").print()
 
-LOAD 69
-END
-
-""").print()
+Machine().add_standard_instructions().run_file('prog.ram').print()
