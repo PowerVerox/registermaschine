@@ -29,6 +29,13 @@ class Operator(StrEnum):
     INDMULT = auto()
     INDDIV = auto()
 
+    @classmethod
+    def from_string(cls, name):
+        try:
+            return cls[name.upper()]
+        except KeyError:
+            raise ValueError(f"'{name}' is no valid Operator")
+
 SIMPLE_INSTRUCTIONS = [
     'load',
     'store',

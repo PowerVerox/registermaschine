@@ -14,47 +14,22 @@ class MachineRuntimeError(Exception):
 class Machine:
     def __init__(self):
         self.instruction_set: dict[Operator, Callable[[Machine, int], Machine]] = {}
-        self.instruction_set[Operator.NONE] = lambda m, v: m
-        self.instruction_set[Operator.END] = lambda m, v: m.end()
+        self.instruction_set[Operator.NONE] = lambda m, i: m
+        self.instruction_set[Operator.END] = lambda m, i: m.end()
         self.program = Program()
         self.programcounter: int = 0
         self.memory = [0] * 16 # 4 Byte je Register, 16 Register insgesamt
         self.should_continue = True
 
-    def __str__(self) -> str:
-        return f'Program: {self.program}\nBefehlszähler: {self.programcounter}\nSpeicher: {self.memory}\n'
-
-    def add_fn(self, operator: Operator, fn: Callable[[Machine, int], Machine]) -> Machine:
-        self.instruction_set[operator] = fn
-        return self
-    
-    def clear_memory(self) -> Machine:
-        self.memory.clear()
-        return self
-    
-    def set(self, index: int, value: int) -> Machine:
-        self.memory[index] = value
-        return self
-    
-    def get(self, index: int) -> int:
-        return self.memory[index]
-    
     def end(self) -> Machine:
         self.should_continue = False
         return self
+
+    def __str__(self) -> str:
+        return f'Program: {self.program}\nBefehlszähler: {self.programcounter}\nSpeicher: {self.memory}\n'
     
-    def set_pc(self, value: int) -> Machine:
-        if value < 0:
-            raise MachineRuntimeError('Programcounter is non-negative')
-        self.programcounter = value
-        return self
-    
-    def inc_pc(self, value: int) -> Machine:
-        self.programcounter += value
-        return self
-    
-    def out(self, value: int) -> Machine:
-        print(f'Out: {value}')
+    def clear_memory(self) -> Machine:
+        self.memory.clear()
         return self
     
     def run_program(self, program: Program) -> Machine:
@@ -78,41 +53,156 @@ class Machine:
 
     def run_code(self, code: str) -> Machine:
         return self.run_program(Program.from_string(code))
-
-    def add_math(self) -> Machine:
-        self.add_fn(Operator.LOAD, fn = (lambda m, i: m.set(0, m.get(i))))
-        self.add_fn(Operator.STORE, fn = (lambda m, i: m.set(i, m.get(0))))
-        self.add_fn(Operator.ADD, fn = (lambda m, i: m.set(0, m.get(0) + m.get(i))))
-        self.add_fn(Operator.SUB, fn = (lambda m, i: m.set(0, m.get(0) - m.get(i))))
-        self.add_fn(Operator.MULT, fn = (lambda m, i: m.set(0, m.get(0) * m.get(i))))
-        self.add_fn(Operator.DIV, fn = (lambda m, i: m.set(0, m.get(0) / m.get(i))))
-        return self
     
-    def add_jumps(self) -> Machine:
-        self.add_fn(Operator.GOTO, fn = (lambda m, i: m.set_pc(i-1)))
-        self.add_fn(Operator.IF_EQ, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) == i))))
-        self.add_fn(Operator.IF_NE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) != i))))
-        self.add_fn(Operator.IF_LT, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) < i))))
-        self.add_fn(Operator.IF_LE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) <= i))))
-        self.add_fn(Operator.IF_GT, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) > i))))
-        self.add_fn(Operator.IF_GE, fn = (lambda m, i: m.inc_pc(nbool_to_int(m.get(0) >= i))))
+    def instruction(self):
+        def decorator(function: Callable[[Machine, int], Machine]):
+            try:
+                operator = Operator.from_string(function.__name__)
+            except ValueError as e:
+                print(f'Error trying to register instruction {function.__name__}: {e}')
+                return function
+            
+            self.instruction_set[operator] = function
+            return function
+        
+        return decorator
+    
+    def add_math(self) -> Machine:
+        @self.instruction()
+        def load(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[i]
+            return m
+    
+        @self.instruction()
+        def store(m: Machine, i: int) -> Machine:
+            m.memory[i] = m.memory[0]
+            return m
+    
+        @self.instruction()
+        def add(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] + m.memory[i]
+            return m
+    
+        @self.instruction()
+        def sub(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] - m.memory[i]
+            return m
+    
+        @self.instruction()
+        def mult(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] * m.memory[i]
+            return m
+    
+        @self.instruction()
+        def div(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] / m.memory[i]
+            return m
+        
         return self
     
     def add_constants(self) -> Machine:
-        self.add_fn(Operator.CLOAD, fn = (lambda m, i: m.set(0, i)))
-        self.add_fn(Operator.CADD, fn = (lambda m, i: m.set(0, m.get(0) + i)))
-        self.add_fn(Operator.CSUB, fn = (lambda m, i: m.set(0, m.get(0) - i)))
-        self.add_fn(Operator.CMULT, fn = (lambda m, i: m.set(0, m.get(0) * i)))
-        self.add_fn(Operator.CDIV, fn = (lambda m, i: m.set(0, m.get(0) / i)))
+        @self.instruction()
+        def cload(m: Machine, i: int) -> Machine:
+            m.memory[0] = i
+            return m
+    
+        @self.instruction()
+        def cadd(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] + i
+            return m
+    
+        @self.instruction()
+        def csub(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] - i
+            return m
+    
+        @self.instruction()
+        def cmult(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] * i
+            return m
+    
+        @self.instruction()
+        def cdiv(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] / i
+            return m
+        
         return self
     
     def add_indirections(self) -> Machine:
-        self.add_fn(Operator.INDLOAD, fn = (lambda m, i: m.set(0, m.get(m.get(i)))))
-        self.add_fn(Operator.INDSTORE, fn = (lambda m, i: m.set(m.get(i), m.get(0))))
-        self.add_fn(Operator.INDADD, fn = (lambda m, i: m.set(0, m.get(0) + m.get(m.get(i)))))
-        self.add_fn(Operator.INDSUB, fn = (lambda m, i: m.set(0, m.get(0) - m.get(m.get(i)))))
-        self.add_fn(Operator.INDMULT, fn = (lambda m, i: m.set(0, m.get(0) * m.get(m.get(i)))))
-        self.add_fn(Operator.INDDIV, fn = (lambda m, i: m.set(0, m.get(0) / m.get(m.get(i)))))
+        @self.instruction()
+        def indload(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[m.memory[i]]
+            return m
+    
+        @self.instruction()
+        def indstore(m: Machine, i: int) -> Machine:
+            m.memory[m.memory[i]] = m.memory[0]
+            return m
+    
+        @self.instruction()
+        def indadd(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] + m.memory[m.memory[i]]
+            return m
+    
+        @self.instruction()
+        def indsub(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] - m.memory[m.memory[i]]
+            return m
+    
+        @self.instruction()
+        def indmult(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] * m.memory[m.memory[i]]
+            return m
+    
+        @self.instruction()
+        def inddiv(m: Machine, i: int) -> Machine:
+            m.memory[0] = m.memory[0] / m.memory[m.memory[i]]
+            return m
+        
+        return self
+    
+    def add_jumps(self) -> Machine:
+        @self.instruction()
+        def goto(m: Machine, i: int) -> Machine:
+            m.programcounter = i - 1
+            return m
+        
+        @self.instruction()
+        def if_eq(m: Machine, i: int) -> Machine:
+            if not m.memory[0] == i:
+                m.programcounter += 1
+            return m
+        
+        @self.instruction()
+        def if_ne(m: Machine, i: int) -> Machine:
+            if not m.memory[0] != i:
+                m.programcounter += 1
+            return m
+        
+        @self.instruction()
+        def if_lt(m: Machine, i: int) -> Machine:
+            if not m.memory[0] < i:
+                m.programcounter += 1
+            return m
+        
+        @self.instruction()
+        def if_le(m: Machine, i: int) -> Machine:
+            if not m.memory[0] <= i:
+                m.programcounter += 1
+            return m
+        
+        @self.instruction()
+        def if_gt(m: Machine, i: int) -> Machine:
+            if not m.memory[0] > i:
+                m.programcounter += 1
+            return m
+        
+        @self.instruction()
+        def if_ge(m: Machine, i: int) -> Machine:
+            if not m.memory[0] >= i:
+                m.programcounter += 1
+            return m
+        
         return self
     
     def add_standard_instructions(self) -> Machine:
@@ -121,4 +211,3 @@ class Machine:
     def print(self) -> Machine:
         print(self)
         return self
-    
