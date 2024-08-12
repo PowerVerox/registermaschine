@@ -15,7 +15,7 @@ class Machine:
     def __init__(self):
         self.instruction_set: dict[Operator, Callable[[Machine, int], Machine]] = {}
         self.instruction_set[Operator.NONE] = lambda m, i: m
-        self.instruction_set[Operator.END] = lambda m, i: m.end()
+        self.instruction_set[Operator.END] = self.end
         self.program = Program()
         self.programcounter: int = 0
         self.memory = [0] * 16 # 4 Byte je Register, 16 Register insgesamt
