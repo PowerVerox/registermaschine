@@ -92,6 +92,20 @@ class Gui:
         self.play_button = tk.Button(self.left_frame, text="Play", command=self.toggle_play_pause)
         self.play_button.grid(row=9, column=2, pady=10, padx=5)
 
+        # Textfeld für die Anzeige von Ausnahmemeldungen
+        self.exception_frame = tk.Frame(self.left_frame)
+        self.exception_frame.grid(row=10, column=0, columnspan=3, pady=10, padx=5)
+        self.exception_text = tk.Text(self.exception_frame, height=8, width=50, wrap='word', fg='red')
+        self.exception_text.configure(state='disabled')
+        self.exception_text.pack(expand=True, fill='both')
+
+    def show_exception(self, message):
+        """Zeigt eine Ausnahmemeldung an."""
+        self.exception_text.configure(state='normal')
+        self.exception_text.insert(tk.END, message + '\n')
+        self.exception_text.configure(state='disabled')
+        self.exception_text.see(tk.END)
+
     def build_text_area(self):
         """Erstellt den Textbereich mit Scrollbar und Zeilennummern."""
         self.text_frame = tk.Frame(self.main_frame)
@@ -155,7 +169,7 @@ class Gui:
                 self.status_bar.config(text=f"Geöffnet: {file_path}")
                 self.update_line_numbers()  # Zeilennummern aktualisieren
             except Exception as e:
-                messagebox.showerror("Fehler", f"Datei konnte nicht geöffnet werden: {e}")
+                self.show_exception(f"Datei konnte nicht geöffnet werden: {e}")
 
     def save_file(self):
         if self.current_file_path:
@@ -165,7 +179,7 @@ class Gui:
                     file.write(content)
                 self.status_bar.config(text=f"Gespeichert: {self.current_file_path}")
             except Exception as e:
-                messagebox.showerror("Fehler", f"Datei konnte nicht gespeichert werden: {e}")
+                self.show_exception(f"Datei konnte nicht gespeichert werden: {e}")
         else:
             self.save_file_as()
 
@@ -180,7 +194,7 @@ class Gui:
                 self.current_file_path = file_path
                 self.status_bar.config(text=f"Gespeichert unter: {file_path}")
             except Exception as e:
-                messagebox.showerror("Fehler", f"Datei konnte nicht gespeichert werden: {e}")
+                self.show_exception(f"Datei konnte nicht gespeichert werden: {e}")
 
     def toggle_editable(self):
         if not self.auto_increment_active:
@@ -203,17 +217,19 @@ class Gui:
                                                              # sonst konvertiere den Wert in eine Ganzzahl 
                                                              # nötig, da sonst ValueError bei leerem String ("")
 
-            if value < 0 or value > 255:
+            if value > 255:
+                # Kleiner als 0 unmoeglich, da keine Sonderzeichen eingegeben werden koennen
                 raise ValueError("Die Zahl muss zwischen 0 und 255 liegen.")
 
             binary_rep = format(value, '08b')
             for i, bit in enumerate(binary_rep):
                 self.leds_list[idx][i].config(text=bit, bg='red' if bit == '1' else 'white')
         except ValueError:
-            # Wenn der Wert ungültig ist, setze alle LEDs auf 0
+            var.set("255")
+            # Wenn der Wert ungültig ist, setze alle LEDs auf 1
             for led in self.leds_list[idx]:
-                led.config(text='0', bg='white')
-            messagebox.showerror("Ungültige Eingabe", "Bitte eine Zahl zwischen 0 und 255 eingeben.")
+                led.config(text='1', bg='red')
+            self.show_exception("Ungültige Eingabe: Bitte eine Zahl zwischen 0 und 255 eingeben.")
 
     def reset(self):
         """Setzt den Program Counter auf 1 und setzt alle Register auf 0."""
@@ -227,7 +243,7 @@ class Gui:
             try:
                 self.machine.step()
             except Exception as e:
-                messagebox.showerror("Fehler", f"Fehler beim Ausführen des Programms: {e}")
+                self.show_exception(str(e))
             self.highlight_program_counter_line()
 
     def toggle_play_pause(self):
