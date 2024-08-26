@@ -8,7 +8,7 @@ class Gui:
         self.root = root
         self.root.geometry("800x500")  # Größe des Fensters festlegen
         self.root.resizable(False, False) # Fenstergröße nicht veränderbar
-        self.root.title("Texteditor")
+        self.root.title("Registermaschine")
 
         self.datamanager = data_manager
 
@@ -293,24 +293,3 @@ class Gui:
             self.line_numbers.create_text(2, y, anchor="nw", text=line_number, fill="black")
             i = self.text_area.index(f"{i}+1line")
         self.highlight_program_counter_line()
-        
-
-class ExternalModule:
-    def __init__(self, data_manager: DataManager):
-        self.data_manager = data_manager
-
-    def modify_variables(self):
-        """Ändert einige Variablen im DataManager."""
-        self.data_manager.entries[0].set("42")  # Setzt den Wert des ersten Eingabefelds auf 42
-        self.data_manager.program_counter.set(5)  # Setzt den Program Counter auf 5
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    datamanager = DataManager(root)
-    machine = Machine(datamanager).add_standard_instructions()
-    editor = Gui(root, datamanager, machine)
-    
-    #external_module = ExternalModule(datamanager)
-    #external_module.modify_variables()
-    editor.root.mainloop()
