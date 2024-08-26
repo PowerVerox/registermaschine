@@ -1,6 +1,7 @@
 from __future__ import annotations
 from decimal import DivisionByZero
 from program import *
+from constants import *
 from typing import Callable
         
 class MachineRuntimeError(Exception):
@@ -15,7 +16,7 @@ class Machine:
         self.instruction_set[Operator.END] = self.end
         self.program = Program()
         self.programcounter: int = 1
-        self.memory = [0] * 8 # 1 Byte je Register, 8 Register insgesamt
+        self.memory = [0] * Constants.REGISTER_COUNT
         self.should_continue = True
 
     @staticmethod # Statisch, damit die Signatur passt
@@ -28,7 +29,7 @@ class Machine:
     def __setitem__(self, index: int, value: int) -> Machine:
         if index < 0 or index >= len(self.memory):
             raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
-        self.memory[index] = value % 256
+        self.memory[index] = value % Constants.REGISTER_LIMIT
         return self
 
     def __getitem__(self, index: int) -> int:
@@ -40,7 +41,7 @@ class Machine:
         return f'Program: {self.program}\nBefehlszähler: {self.programcounter}\nSpeicher: {self.memory}\n'
     
     def clear_memory(self) -> Machine:
-        self.memory = [0] * 16
+        self.memory = [0] * Constants.REGISTER_COUNT
         return self
     
     def run_program(self, program: Program) -> Machine:

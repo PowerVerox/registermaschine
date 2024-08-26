@@ -1,6 +1,8 @@
 from __future__ import annotations
 from enum import auto, StrEnum
 
+from constants import *
+
 class Operator(StrEnum):
     NONE = auto() # Keine Operation, leerer Befehl
     LOAD = auto()
@@ -73,7 +75,7 @@ def canonicalize(string: str) -> str:
 class Instruction:
     def __init__(self, operator: Operator, operand: int):
         self.operator: Operator = operator
-        self.operand = operand % 256
+        self.operand = operand % Constants.REGISTER_LIMIT
 
     def __str__(self) -> str:
         op = self.operator
