@@ -211,7 +211,7 @@ class Machine:
     def add_jumps(self) -> Machine:
         @self.instruction()
         def goto(m: Machine, i: int) -> Machine:
-            m.change_programcounter(-1)
+            m.set_programcounter(i-1)
             return m
         
         @self.instruction()

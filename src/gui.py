@@ -202,7 +202,10 @@ class Gui:
             self.text_area.config(state=tk.NORMAL if self.editable else tk.DISABLED)
             self.status_bar.config(text=f"Bearbeiten: {'Ein' if self.editable else 'Aus'}")
             if not self.editable:
-                self.machine.program = Program.from_string(self.text_area.get(1.0, tk.END))
+                try:
+                    self.machine.program = Program.from_string(self.text_area.get(1.0, tk.END))
+                except Exception as e:
+                    self.show_exception(f"Programm konnte nicht geladen werden: {e}")
 
     def validate_integer(self, value_if_allowed):
         """Validiert das Eingabefeld auf ganzzahlige positive Werte."""
