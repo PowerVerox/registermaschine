@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import auto, StrEnum
 
 class Operator(StrEnum):
-    NONE = auto() # No operation, empty statement
+    NONE = auto() # Keine Operation, leerer Befehl
     LOAD = auto()
     STORE = auto()
     ADD = auto()
@@ -36,6 +36,7 @@ class Operator(StrEnum):
         except KeyError:
             raise ValueError(f"'{name}' is no valid Operator")
 
+# Alle Befehle, die aus einem Wort und einer Zahl bestehen
 SIMPLE_INSTRUCTIONS = [
     'load',
     'store',
@@ -72,7 +73,7 @@ def canonicalize(string: str) -> str:
 class Instruction:
     def __init__(self, operator: Operator, operand: int):
         self.operator: Operator = operator
-        self.operand = operand
+        self.operand = operand % 256
 
     def __str__(self) -> str:
         op = self.operator
@@ -80,7 +81,7 @@ class Instruction:
             case Operator.END:
                 return Operator.END.value
             case Operator.IF_EQ | Operator.IF_GE | Operator.IF_GT | Operator.IF_LE | Operator.IF_LT:
-                comparator = '?' #TODO find ich bisschen komisch, vllt ueberarbeiten
+                comparator = ''
                 match op:
                     case Operator.IF_EQ:
                         comparator = '='
@@ -100,7 +101,6 @@ class Instruction:
     
     @staticmethod
     def from_string(source: str) -> Instruction:
-        #split source
         parts = canonicalize(source).split(' ')
         operator = parts[0]
         part1 = ''
@@ -122,7 +122,7 @@ class Instruction:
                     operand = int(part1)
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
-                return Instruction(operator, operand)
+                return Instruction(Operator.from_string(operator), operand)
             case 'goto':
                 operand = 0
                 try:
