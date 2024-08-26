@@ -236,6 +236,9 @@ class Gui:
         self.machine.clear_memory()
         self.datamanager.program_counter.set(1)
         self.highlight_program_counter_line()
+        self.exception_text.configure(state='normal')
+        self.exception_text.delete(1.0, tk.END)
+        self.exception_text.configure(state='disabled')
 
     def step(self):
         """Inkrementiert den Program Counter um 1 und aktualisiert die Zeilenhervorhebung."""
