@@ -123,20 +123,17 @@ class Instruction:
             case '':
                 return Instruction(Operator.NONE, 0)
             case operator if operator in SIMPLE_INSTRUCTIONS:
+                if len(parts) > 2:
+                    raise InvalidSyntax(f'Instruction {operator} expects only one operand')
                 operand = 0
                 try:
                     operand = int(part1)
                 except ValueError:
                     raise InvalidOperand(f'Operand {part1} is not an integer')
                 return Instruction(Operator.from_string(operator), operand)
-            case 'goto':
-                operand = 0
-                try:
-                    operand = int(part1)
-                except ValueError:
-                    raise InvalidOperand(f'Operand {part1} is not an integer')
-                return Instruction(Operator.GOTO, operand)
             case 'if':
+                if len(parts) != 3:
+                    raise InvalidSyntax(f'IF-Statements expect a comparator and a comparison value')
                 operand = 0
                 try:
                     operand = int(part2)

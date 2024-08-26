@@ -1,4 +1,6 @@
+# Programm zaehlt bis 10
 cadd 1
 if != 10
 goto 1
 end
+
