@@ -283,7 +283,7 @@ class Gui:
         self.text_area.tag_configure('highlight', background='yellow')
 
     def update_line_numbers(self, event=None):
-        """Aktualisiert die Zeilennummern im Canvas links vom Texteditor."""
+        """Aktualisiert die Zeilennummern des Texteditors."""
         self.line_numbers.delete("all")
 
         i = self.text_area.index("@0,0")
