@@ -103,6 +103,10 @@ class Instruction:
     
     @staticmethod
     def from_string(source: str) -> Instruction:
+        # Kommentare ignorieren
+        if source.startswith('#'):
+            return Instruction(Operator.NONE, 0)
+        
         parts = canonicalize(source).split(' ')
         operator = parts[0]
         part1 = ''

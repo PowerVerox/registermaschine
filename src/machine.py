@@ -3,26 +3,41 @@ from decimal import DivisionByZero
 from program import *
 from constants import *
 from typing import Callable
+from data_manager import DataManager
         
 class MachineRuntimeError(Exception):
     pass
 
 class Machine:
-    def __init__(self):
+    def __init__(self, data_manager: DataManager):
         # Befehlssatz besteht aus einem Dictionary, welches Operatoren auf Funktionen abbildet,
         # die eine Maschine und einen ganzzahligen Operanden entgegennehmen und eine Maschine zurueckgeben
         self.instruction_set: dict[Operator, Callable[[Machine, int], Machine]] = {}
         self.instruction_set[Operator.NONE] = lambda m, i: m
         self.instruction_set[Operator.END] = self.end
         self.program = Program()
-        self.programcounter: int = 1
+
+        self.data_manager = data_manager
+        self.data_manager.program_counter.set(1)
         self.memory = [0] * Constants.REGISTER_COUNT
-        self.should_continue = True
+        for i in range(Constants.REGISTER_COUNT):
+            self.data_manager.entries[i].set('0')
 
     @staticmethod # Statisch, damit die Signatur passt
     def end(m: Machine, _: int) -> Machine:
-        m.should_continue = False
+        m.set_programcounter(m.program.size()+1)
         return m
+    
+    def set_programcounter(self, value: int) -> Machine:
+        self.data_manager.program_counter.set(value)
+        return self
+    
+    def change_programcounter(self, amount: int) -> Machine:
+        self.data_manager.program_counter.set(self.data_manager.program_counter.get() + amount)
+        return self
+    
+    def get_programcounter(self) -> int:
+        return self.data_manager.program_counter.get()
     
     # Indexoperator fuer Register
     # Macht die Instruktionen s.u. "cleaner" und hat eine Indexpreufung und Wertebereichsbeschraenkung auf 0-255
@@ -30,6 +45,7 @@ class Machine:
         if index < 0 or index >= len(self.memory):
             raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
         self.memory[index] = value % Constants.REGISTER_LIMIT
+        self.data_manager.entries[index].set(str(self.memory[index]))
         return self
 
     def __getitem__(self, index: int) -> int:
@@ -38,18 +54,19 @@ class Machine:
         return self.memory[index]
 
     def __str__(self) -> str:
-        return f'Program: {self.program}\nBefehlszähler: {self.programcounter}\nSpeicher: {self.memory}\n'
+        return f'Program: {self.program}\nBefehlszähler: {self.get_programcounter()}\nSpeicher: {self.memory}\n'
     
     def clear_memory(self) -> Machine:
         self.memory = [0] * Constants.REGISTER_COUNT
+        for i in range(Constants.REGISTER_COUNT):
+            self.data_manager.entries[i].set('0')
         return self
     
-    def run_program(self, program: Program) -> Machine:
-        self.program = program
-        # Maschine kann extern beendet werden oder durch einen internen Befehl
-        while self.should_continue and self.programcounter <= self.program.size():
+    def step(self) -> Machine:
+        if self.get_programcounter() <= self.program.size() and self.program[self.get_programcounter() - 1].operator != Operator.END:
+            print('War hier')
             # Aktuellen Befehl erhalten
-            instruction = self.program[self.programcounter - 1]
+            instruction = self.program[self.get_programcounter() - 1]
             # Zugehoeriges Lambda ausfuehren
             try:
                 self.instruction_set[instruction.operator](self, instruction.operand)
@@ -63,7 +80,13 @@ class Machine:
                 # Alle anderen Fehler werden weitergegeben
                 raise MachineRuntimeError(f'An error occured: {e}')
             # Befehlszaehler inkrementieren
-            self.programcounter += 1
+            self.change_programcounter(1)
+        return self
+    
+    def run_program(self, program: Program) -> Machine:
+        self.program = program
+        while self.get_programcounter() <= self.program.size() and self.program[self.get_programcounter() - 1].operator != Operator.END:
+            self.step()
         return self
     
     def run_file(self, path: str = 'prog.ram') -> Machine:
@@ -189,43 +212,43 @@ class Machine:
     def add_jumps(self) -> Machine:
         @self.instruction()
         def goto(m: Machine, i: int) -> Machine:
-            m.programcounter = i - 1
+            m.change_programcounter(-1)
             return m
         
         @self.instruction()
         def if_eq(m: Machine, i: int) -> Machine:
             if not m[0] == i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         @self.instruction()
         def if_ne(m: Machine, i: int) -> Machine:
             if not m[0] != i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         @self.instruction()
         def if_lt(m: Machine, i: int) -> Machine:
             if not m[0] < i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         @self.instruction()
         def if_le(m: Machine, i: int) -> Machine:
             if not m[0] <= i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         @self.instruction()
         def if_gt(m: Machine, i: int) -> Machine:
             if not m[0] > i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         @self.instruction()
         def if_ge(m: Machine, i: int) -> Machine:
             if not m[0] >= i:
-                m.programcounter += 1
+                m.change_programcounter(1)
             return m
         
         return self

@@ -1,53 +1,120 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-class TextEditor:
-    def __init__(self, root):
+from machine import *
+
+class Gui:
+    def __init__(self, root: tk.Tk, data_manager: DataManager, machine: Machine):
         self.root = root
-        self.root.title("Registermaschine")
-        
-        # Hauptframe für linke und rechte Seite
+        self.root.geometry("800x500")  # Größe des Fensters festlegen
+        self.root.resizable(False, False) # Fenstergröße nicht veränderbar
+        self.root.title("Texteditor")
+
+        self.datamanager = data_manager
+
+        # Initialisierung der Variablen
+        self.editable = True
+        self.current_file_path = None
+        #self.program_counter = tk.IntVar(value=0)  # Initialisiert den Program Counter => data_manager.program_counter
+        self.auto_increment_active = False  # Flag für die automatische Inkrementierung (play aktiv)
+
+        # Erstellen der GUI-Komponenten
+        self.build_main_frame()
+        self.build_left_panel()
+        self.build_text_area()
+        self.build_menu()
+        self.build_status_bar()
+        self.machine = machine
+
+        # Binde die Zeilenaktualisierung an das Scroll- und Textveränderungsereignis
+        self.text_area.bind('<KeyRelease>', self.update_line_numbers)
+        self.text_area.bind('<MouseWheel>', self.update_line_numbers)
+        self.text_area.bind('<ButtonRelease-1>', self.update_line_numbers)
+
+        # Update der Zeilennummern beim Start
+        self.update_line_numbers()
+
+    def build_main_frame(self):
+        """Erstellt den Hauptframe, der den linken und rechten Bereich umfasst."""
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(expand=True, fill='both')
 
-        # Linker Bereich für zusätzliche Anzeigen
+    def build_left_panel(self):
+        """Erstellt den linken Bereich mit 8 Zahleneingabefeldern, Binäranzeigen und Program Counter."""
         self.left_frame = tk.Frame(self.main_frame, width=200, bg='lightgrey')
-        self.left_frame.pack(side='left', fill='both')
+        self.left_frame.pack(side='left', fill='both', padx=10, pady=10)
 
-        # Eingabefeld für ganze Zahl
-        self.integer_label = tk.Label(self.left_frame, text="Ganze Zahl:")
-        self.integer_label.pack(pady=5)
+        # Erstellen von 8 Zahleneingabefeldern und Binäranzeigen
+        #self.entries = [] => data_manager.entries
+        self.leds_list = []
 
-        # Validation Command für Eingabefeld
-        vcmd = (self.left_frame.register(self.validate_integer), '%P')
-        self.integer_entry = tk.Entry(self.left_frame, validate='key', validatecommand=vcmd)
-        self.integer_entry.pack(pady=5)
-        self.integer_entry.bind("<KeyRelease>", self.update_binary_representation)
+        for i, integer_var in enumerate(self.datamanager.entries):
+            # Label und Eingabefeld in derselben Zeile
+            integer_label = tk.Label(self.left_frame, text=f"Zahl {i + 1}:")
+            integer_label.grid(row=i, column=0, pady=5, padx=5, sticky='e')
 
-        # Anzeige der Binärdarstellung
-        self.binary_label = tk.Label(self.left_frame, text="Binärdarstellung:")
-        self.binary_label.pack(pady=5)
-        self.binary_frame = tk.Frame(self.left_frame)
-        self.binary_frame.pack(pady=5)
+            # StringVar für das Eingabefeld, damit wir Änderungen überwachen können
+            integer_var.trace_add("write", lambda name, index, mode, var=integer_var, idx=i: self.update_binary_representation(var, idx))
 
-        # 8 LEDs (Label) für die Binärdarstellung
-        self.leds = [tk.Label(self.binary_frame, text='0', width=2, bg='white', relief='ridge') for _ in range(8)]
-        for led in self.leds:
-            led.pack(side='left', padx=2)
+            # Eingabefeld für die Zahl
+            vcmd = (self.left_frame.register(self.validate_integer), '%P')
+            integer_entry = tk.Entry(self.left_frame, textvariable=integer_var, validate='key', validatecommand=vcmd, width=10)
+            integer_entry.grid(row=i, column=1, pady=5, padx=5)
 
-        # Textbereich für den Editor auf der rechten Seite mit Scrollbar
+            # Frame für die LEDs (Binärdarstellung) rechts neben dem Eingabefeld
+            binary_frame = tk.Frame(self.left_frame)
+            binary_frame.grid(row=i, column=2, pady=5, padx=5)
+
+            leds = [tk.Label(binary_frame, text='0', width=2, bg='white', relief='ridge') for _ in range(8)]
+            for led in leds:
+                led.pack(side='left', padx=1)
+
+            # Speichern von Eingabefeld und LEDs zur späteren Verwendung
+            self.leds_list.append(leds)
+
+        # Program Counter-Anzeige
+        program_counter_label = tk.Label(self.left_frame, text="Program Counter:")
+        program_counter_label.grid(row=8, column=0, pady=10, padx=5, sticky='e')
+
+        # Anzeige des Program Counters
+        self.pc_display = tk.Label(self.left_frame, textvariable=self.datamanager.program_counter, relief='sunken', width=10)
+        self.pc_display.grid(row=8, column=1, pady=10, padx=5)
+
+        # Step-Button
+        self.step_button = tk.Button(self.left_frame, text="Step", command=self.step)
+        self.step_button.grid(row=9, column=0, pady=10, padx=5)
+
+        # Play/Pause-Button
+        self.play_button = tk.Button(self.left_frame, text="Play", command=self.toggle_play_pause)
+        self.play_button.grid(row=9, column=1, pady=10, padx=5)
+
+    def build_text_area(self):
+        """Erstellt den Textbereich mit Scrollbar und Zeilennummern."""
         self.text_frame = tk.Frame(self.main_frame)
         self.text_frame.pack(side='right', expand=True, fill='both')
 
+        # Canvas für die Zeilennummern
+        self.line_numbers = tk.Canvas(self.text_frame, width=40, bg='lightgrey')
+        self.line_numbers.pack(side='left', fill='y')
+
+        # Textbereich mit Scrollbar
         self.scrollbar = tk.Scrollbar(self.text_frame)
         self.scrollbar.pack(side='right', fill='y')
 
         self.text_area = tk.Text(self.text_frame, wrap='word', yscrollcommand=self.scrollbar.set)
         self.text_area.pack(expand=True, fill='both')
 
-        self.scrollbar.config(command=self.text_area.yview)
+        # self.scrollbar.config(command=self.text_area.yview)
+        self.scrollbar.config(command=self.scrollbar_command)
 
-        # Menüleiste erstellen
+    def scrollbar_command(self, *args):
+        """Verknüpft die Scrollbar mit dem Textbereich."""
+        self.text_area.yview(*args)
+        self.update_line_numbers()
+        
+
+    def build_menu(self):
+        """Erstellt die Menüleiste mit den Menüs 'Datei' und 'Bearbeiten'."""
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
 
@@ -64,13 +131,12 @@ class TextEditor:
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Bearbeiten", menu=self.edit_menu)
         self.edit_menu.add_command(label="Bearbeiten umschalten", command=self.toggle_editable)
+        self.highlight_program_counter_line()
 
-        # Statusleiste
+    def build_status_bar(self):
+        """Erstellt die Statusleiste am unteren Rand des Fensters."""
         self.status_bar = tk.Label(self.root, text="Bearbeiten: Ein", bd=1, relief='sunken', anchor='w')
         self.status_bar.pack(side='bottom', fill='x')
-
-        self.editable = True
-        self.current_file_path = None
 
     def open_file(self):
         file_path = filedialog.askopenfilename(defaultextension=".ram",
@@ -83,6 +149,7 @@ class TextEditor:
                 self.text_area.insert(tk.END, content)
                 self.current_file_path = file_path
                 self.status_bar.config(text=f"Geöffnet: {file_path}")
+                self.update_line_numbers()  # Zeilennummern aktualisieren
             except Exception as e:
                 messagebox.showerror("Fehler", f"Datei konnte nicht geöffnet werden: {e}")
 
@@ -112,34 +179,108 @@ class TextEditor:
                 messagebox.showerror("Fehler", f"Datei konnte nicht gespeichert werden: {e}")
 
     def toggle_editable(self):
-        self.editable = not self.editable
-        state = 'normal' if self.editable else 'disabled'
-        self.text_area.config(state=state)
-        self.status_bar.config(text=f"Bearbeiten: {'Ein' if self.editable else 'Aus'}")
+        if not self.auto_increment_active:
+            self.editable = not self.editable
+            self.text_area.config(state=tk.NORMAL if self.editable else tk.DISABLED)
+            self.status_bar.config(text=f"Bearbeiten: {'Ein' if self.editable else 'Aus'}")
+            if not self.editable:
+                self.machine.program = Program.from_string(self.text_area.get(1.0, tk.END))
 
-    def validate_integer(self, i):
-        """ Validiert, dass die Eingabe nur ganze positive Zahlen enthält. """
-        return i.isdigit() or i == ""
+    def validate_integer(self, value_if_allowed):
+        """Validiert das Eingabefeld auf ganzzahlige positive Werte."""
+        if value_if_allowed.isdigit() or value_if_allowed == "":
+            return True
+        return False
 
-    def update_binary_representation(self, event=None):
-        # Holen Sie sich den Wert aus dem Eingabefeld
-        value = self.integer_entry.get()
-        if value.isdigit():
-            number = int(value)
-            if 0 <= number <= 255:
-                # Berechnen Sie die Binärdarstellung
-                binary_representation = format(number, '08b')
-                # Aktualisieren Sie die LEDs
-                for i, bit in enumerate(binary_representation):
-                    self.leds[i].config(text=bit, bg='red' if bit == '1' else 'white')
-            else:
-                messagebox.showwarning("Warnung", "Bitte geben Sie eine Zahl zwischen 0 und 255 ein.")
-        else:
-            for led in self.leds:
+    def update_binary_representation(self, var, idx):
+        """Aktualisiert die binäre Repräsentation basierend auf dem Eingabefeld."""
+        try:
+            value = 0 if var.get() == "" else int(var.get()) # Wenn das Feld leer ist, setze den Wert auf 0, 
+                                                             # sonst konvertiere den Wert in eine Ganzzahl 
+                                                             # nötig, da sonst ValueError bei leerem String ("")
+
+            if value < 0 or value > 255:
+                raise ValueError("Die Zahl muss zwischen 0 und 255 liegen.")
+
+            binary_rep = format(value, '08b')
+            for i, bit in enumerate(binary_rep):
+                self.leds_list[idx][i].config(text=bit, bg='red' if bit == '1' else 'white')
+        except ValueError:
+            # Wenn der Wert ungültig ist, setze alle LEDs auf 0
+            for led in self.leds_list[idx]:
                 led.config(text='0', bg='white')
+            messagebox.showerror("Ungültige Eingabe", "Bitte eine Zahl zwischen 0 und 255 eingeben.")
+
+    def step(self):
+        """Inkrementiert den Program Counter um 1 und aktualisiert die Zeilenhervorhebung."""
+        if not self.editable:
+            self.machine.step()
+            print('step', self.datamanager.program_counter.get())
+            #self.datamanager.program_counter.set(self.datamanager.program_counter.get() + 1)
+            self.highlight_program_counter_line()
+
+    def toggle_play_pause(self):
+        """Wechselt zwischen automatischer Inkrementierung und Pause."""
+        if self.auto_increment_active:
+            # Pausiere die automatische Inkrementierung
+            self.auto_increment_active = False
+            self.play_button.config(text="Play")
+        elif not self.editable:
+            # Starte die automatische Inkrementierung
+            self.auto_increment_active = True
+            self.play_button.config(text="Pause")
+            self.auto_increment()
+
+    def auto_increment(self):
+        """Erhöht den Program Counter automatisch in Intervallen, bis der Play-Button wieder gedrückt wird."""
+        if self.auto_increment_active:
+            self.step()
+            #self.datamanager.program_counter.set(self.datamanager.program_counter.get() + 1)
+            self.highlight_program_counter_line()
+            self.root.after(1000, self.auto_increment)  # Wiederholt nach 1 Sekunde
+
+    def highlight_program_counter_line(self):
+        """Markiert die Zeile, auf die der Program Counter zeigt."""
+        # Entferne vorherige Hervorhebung
+        self.text_area.tag_remove('highlight', '1.0', tk.END)
+        
+        # Hole die Zeile, die hervorgehoben werden soll
+        line_num = self.datamanager.program_counter.get()
+        self.text_area.tag_add('highlight', f'{line_num}.0', f'{line_num}.0 lineend')
+        self.text_area.tag_configure('highlight', background='yellow')
+
+    def update_line_numbers(self, event=None):
+        """Aktualisiert die Zeilennummern im Canvas links vom Texteditor."""
+        self.line_numbers.delete("all")
+
+        i = self.text_area.index("@0,0")
+        while True:
+            dline = self.text_area.dlineinfo(i)
+            if dline is None:
+                break
+            y = dline[1]
+            line_number = str(i).split(".")[0]
+            self.line_numbers.create_text(2, y, anchor="nw", text=line_number, fill="black")
+            i = self.text_area.index(f"{i}+1line")
+        self.highlight_program_counter_line()
+        
+
+class ExternalModule:
+    def __init__(self, data_manager: DataManager):
+        self.data_manager = data_manager
+
+    def modify_variables(self):
+        """Ändert einige Variablen im DataManager."""
+        self.data_manager.entries[0].set("42")  # Setzt den Wert des ersten Eingabefelds auf 42
+        self.data_manager.program_counter.set(5)  # Setzt den Program Counter auf 5
+
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("800x600")  # Größe des Fensters festlegen
-    editor = TextEditor(root)
-    root.mainloop()
+    datamanager = DataManager(root)
+    machine = Machine(datamanager).add_standard_instructions()
+    editor = Gui(root, datamanager, machine)
+    
+    #external_module = ExternalModule(datamanager)
+    #external_module.modify_variables()
+    editor.root.mainloop()
