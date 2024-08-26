@@ -27,13 +27,13 @@ class Machine:
     # Macht die Instruktionen s.u. "cleaner" und hat eine Indexpreufung und Wertebereichsbeschraenkung auf 0-255
     def __setitem__(self, index: int, value: int) -> Machine:
         if index < 0 or index >= len(self.memory):
-            raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and 7')
+            raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
         self.memory[index] = value % 256
         return self
 
     def __getitem__(self, index: int) -> int:
         if index < 0 or index >= len(self.memory):
-            raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and 7')
+            raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
         return self.memory[index]
 
     def __str__(self) -> str:
