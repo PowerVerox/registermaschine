@@ -64,7 +64,6 @@ class Machine:
     
     def step(self) -> Machine:
         if self.get_programcounter() <= self.program.size() and self.program[self.get_programcounter() - 1].operator != Operator.END:
-            print('War hier')
             # Aktuellen Befehl erhalten
             instruction = self.program[self.get_programcounter() - 1]
             # Zugehoeriges Lambda ausfuehren

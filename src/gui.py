@@ -50,7 +50,7 @@ class Gui:
 
         for i, integer_var in enumerate(self.datamanager.entries):
             # Label und Eingabefeld in derselben Zeile
-            integer_label = tk.Label(self.left_frame, text=f"Zahl {i + 1}:")
+            integer_label = tk.Label(self.left_frame, text="     Akku    " if i == 0 else f"Register {i}:")
             integer_label.grid(row=i, column=0, pady=5, padx=5, sticky='e')
 
             # StringVar für das Eingabefeld, damit wir Änderungen überwachen können
@@ -80,13 +80,17 @@ class Gui:
         self.pc_display = tk.Label(self.left_frame, textvariable=self.datamanager.program_counter, relief='sunken', width=10)
         self.pc_display.grid(row=8, column=1, pady=10, padx=5)
 
+        # Reset-Button
+        self.step_button = tk.Button(self.left_frame, text="Reset", command=self.reset)
+        self.step_button.grid(row=9, column=0, pady=10, padx=5)
+
         # Step-Button
         self.step_button = tk.Button(self.left_frame, text="Step", command=self.step)
-        self.step_button.grid(row=9, column=0, pady=10, padx=5)
+        self.step_button.grid(row=9, column=1, pady=10, padx=5)
 
         # Play/Pause-Button
         self.play_button = tk.Button(self.left_frame, text="Play", command=self.toggle_play_pause)
-        self.play_button.grid(row=9, column=1, pady=10, padx=5)
+        self.play_button.grid(row=9, column=2, pady=10, padx=5)
 
     def build_text_area(self):
         """Erstellt den Textbereich mit Scrollbar und Zeilennummern."""
@@ -211,12 +215,19 @@ class Gui:
                 led.config(text='0', bg='white')
             messagebox.showerror("Ungültige Eingabe", "Bitte eine Zahl zwischen 0 und 255 eingeben.")
 
+    def reset(self):
+        """Setzt den Program Counter auf 1 und setzt alle Register auf 0."""
+        self.machine.clear_memory()
+        self.datamanager.program_counter.set(1)
+        self.highlight_program_counter_line()
+
     def step(self):
         """Inkrementiert den Program Counter um 1 und aktualisiert die Zeilenhervorhebung."""
         if not self.editable:
-            self.machine.step()
-            print('step', self.datamanager.program_counter.get())
-            #self.datamanager.program_counter.set(self.datamanager.program_counter.get() + 1)
+            try:
+                self.machine.step()
+            except Exception as e:
+                messagebox.showerror("Fehler", f"Fehler beim Ausführen des Programms: {e}")
             self.highlight_program_counter_line()
 
     def toggle_play_pause(self):
