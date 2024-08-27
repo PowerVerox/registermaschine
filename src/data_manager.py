@@ -7,5 +7,5 @@ class DataManager:
     
     def __init__(self, root: tk.Tk):
         # Gemeinsame Variablen, die in der GUI und anderen Klassen verwendet werden
-        self.entries: list[tk.StringVar] = [tk.StringVar(master=root, value="0") for _ in range(Constants.REGISTER_COUNT)]
+        self.registers: list[tk.StringVar] = [tk.StringVar(master=root, value="0") for _ in range(Constants.REGISTER_COUNT)]
         self.program_counter = tk.IntVar(master=root, value=1)
