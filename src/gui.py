@@ -223,7 +223,7 @@ class Gui:
                                                              # nötig, da sonst ValueError bei leerem String ("")
 
             if value > 255:
-                # Kleiner als 0 unmoeglich, da keine Sonderzeichen eingegeben werden koennen
+                # Kleiner als 0 unmoeglich, da keine Sonderzeichen eingegeben werden koennen, wenn im Programm Minuszahl --> Modulare Arithmetik
                 raise ValueError("Die Zahl muss zwischen 0 und 255 liegen.")
 
             binary_rep = format(value, '08b')
