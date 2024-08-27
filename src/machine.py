@@ -21,7 +21,7 @@ class Machine:
         self.data_manager.program_counter.set(1)
         self.memory = [0] * Constants.REGISTER_COUNT
         for i in range(Constants.REGISTER_COUNT):
-            self.data_manager.entries[i].set('0')
+            self.data_manager.registers[i].set('0')
 
     @staticmethod # Statisch, damit die Signatur passt
     def end(m: Machine, _: int) -> Machine:
@@ -45,7 +45,7 @@ class Machine:
         if index < 0 or index >= len(self.memory):
             raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
         self.memory[index] = value % Constants.REGISTER_LIMIT
-        self.data_manager.entries[index].set(str(self.memory[index]))
+        self.data_manager.registers[index].set(str(self.memory[index]))
         return self
 
     def __getitem__(self, index: int) -> int:
@@ -59,7 +59,7 @@ class Machine:
     def clear_memory(self) -> Machine:
         self.memory = [0] * Constants.REGISTER_COUNT
         for i in range(Constants.REGISTER_COUNT):
-            self.data_manager.entries[i].set('0')
+            self.data_manager.registers[i].set('0')
         return self
     
     def step(self) -> Machine:
