@@ -1,0 +1,6 @@
+# Verschiebt ein Bit nach links
+cmult 2
+if = 0
+cload 1
+goto 1
+end

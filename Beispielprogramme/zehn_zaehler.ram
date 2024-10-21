@@ -1,0 +1,6 @@
+# Programm zaehlt bis 10
+cadd 1
+# Solange akku != 10 wiederholen
+if != 10
+goto 2
+end

@@ -1,0 +1,17 @@
+# Negative Zahlen werden nach
+# Zweierkomplementdarstellung
+# als vorzeichenlos interpretiert
+CLOAD -1
+IF = 255
+GOTO 10
+# sonst
+GOTO 15
+#
+#
+# -1 ist 255
+END
+#
+#
+#
+# -1 ist nicht 255
+END

@@ -1,0 +1,12 @@
+# 42 in Register 4 schreiben
+CLOAD 42
+STORE 4
+# 4 (Register) in
+# Register 2 schreiben
+CLOAD 4
+STORE 2
+# Akku auf den Registerinhalt setzen,
+# auf den Register 2 zeigt
+INDLOAD 2
+# Akku sollte jetzt 42 sein
+END

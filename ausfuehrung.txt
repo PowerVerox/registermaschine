@@ -1,0 +1,9 @@
+1)   I) ./Registermaschine/src/main.py ausführen,
+    II) Es öffnet sich ein GUI-Fenster,
+   III) Ins rechte Textfeld klicken, um zu testen, ob die Bearbeitung aktiv ist,
+        Falls nicht diese mit [Bearbeiten]-->[Bearbeiten umschalten] aktivieren.
+2)  I) [Datei]-->[Öffnen],
+   II) RAM-Datei auswählen, befinden sich unter ./Beispielprogramme.
+3) Mit [Bearbeiten]-->[Bearbeiten umschalten] die Textfeld-Bearbeitung beenden.
+4) Prog-RAM mit [Play] starten, oder mit [Step] Zeile für Zeile ausführen.
+

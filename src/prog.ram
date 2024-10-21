@@ -1,0 +1,8 @@
+# Testprogramm fuer Bedingungen
+CLOAD 41
+IF = 42
+GO TO 6
+CLOAD -1
+END
+CLOAD 77
+END
