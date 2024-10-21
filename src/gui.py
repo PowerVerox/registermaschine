@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 
+from constants import *
 from machine import *
 
 class Gui:
@@ -38,12 +39,12 @@ class Gui:
         self.main_frame.pack(expand=True, fill='both')
 
     def build_left_panel(self):
-        """Erstellt den linken Bereich mit 8 Zahleneingabefeldern, 
+        """Erstellt den linken Bereich mit Constants.REGISTER_COUNT Zahleneingabefeldern, 
         Binäranzeigen Steuerungsschaltflächen und Program Counter."""
         self.left_frame = tk.Frame(self.main_frame, width=200, bg='lightgrey')
         self.left_frame.pack(side='left', fill='both', padx=10, pady=10)
 
-        # Erstellen von 8 Zahleneingabefeldern und Binäranzeigen
+        # Erstellen von Constants.REGISTER_COUNT Zahleneingabefeldern und Binäranzeigen
         self.leds_list = []
 
         for i, integer_var in enumerate(self.datamanager.registers):
@@ -63,7 +64,7 @@ class Gui:
             binary_frame = tk.Frame(self.left_frame)
             binary_frame.grid(row=i, column=2, pady=5, padx=5)
 
-            leds = [tk.Label(binary_frame, text='0', width=2, bg='white', relief='ridge') for _ in range(8)]
+            leds = [tk.Label(binary_frame, text='0', width=2, bg='white', relief='ridge') for _ in range(Constants.REGISTER_LIMIT.bit_length()-1)]
             for led in leds:
                 led.pack(side='left', padx=1)
 
@@ -72,27 +73,27 @@ class Gui:
 
         # Program Counter Label
         program_counter_label = tk.Label(self.left_frame, text="Program Counter:")
-        program_counter_label.grid(row=8, column=0, pady=10, padx=5, sticky='e')
+        program_counter_label.grid(row=Constants.REGISTER_COUNT, column=0, pady=10, padx=5, sticky='e')
 
         # Anzeige des Werts des Program Counters
         self.pc_display = tk.Label(self.left_frame, textvariable=self.datamanager.program_counter, relief='sunken', width=10)
-        self.pc_display.grid(row=8, column=1, pady=10, padx=5)
+        self.pc_display.grid(row=Constants.REGISTER_COUNT, column=1, pady=10, padx=5)
 
         # Reset-Button
         self.step_button = tk.Button(self.left_frame, text="Reset", command=self.reset)
-        self.step_button.grid(row=9, column=0, pady=10, padx=5)
+        self.step_button.grid(row=Constants.REGISTER_COUNT+1, column=0, pady=10, padx=5)
 
         # Step-Button
         self.step_button = tk.Button(self.left_frame, text="Step", command=self.step)
-        self.step_button.grid(row=9, column=1, pady=10, padx=5)
+        self.step_button.grid(row=Constants.REGISTER_COUNT+1, column=1, pady=10, padx=5)
 
         # Play/Pause-Button
         self.play_button = tk.Button(self.left_frame, text="Play", command=self.toggle_play_pause)
-        self.play_button.grid(row=9, column=2, pady=10, padx=5)
+        self.play_button.grid(row=Constants.REGISTER_COUNT+1, column=2, pady=10, padx=5)
 
         # Textfeld für die Anzeige von Exceptions
         self.exception_frame = tk.Frame(self.left_frame)
-        self.exception_frame.grid(row=10, column=0, columnspan=3, pady=10, padx=5)
+        self.exception_frame.grid(row=Constants.REGISTER_COUNT+2, column=0, columnspan=3, pady=10, padx=5)
         self.exception_text = tk.Text(self.exception_frame, height=8, width=50, wrap='word', fg='red')
         self.exception_text.configure(state='disabled')
         self.exception_text.pack(expand=True, fill='both')
