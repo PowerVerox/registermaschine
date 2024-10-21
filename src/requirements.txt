@@ -1,1 +1,2 @@
-tkinter
+#python version >= 3.11 cause of StrEnum
+tk
