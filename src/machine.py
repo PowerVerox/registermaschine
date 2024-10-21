@@ -40,7 +40,7 @@ class Machine:
         return self.data_manager.program_counter.get()
     
     # Indexoperator fuer Register
-    # Macht die Instruktionen s.u. "cleaner" und hat eine Indexpreufung und Wertebereichsbeschraenkung auf 0-255
+    # Macht die Instruktionen s.u. "cleaner" und hat eine Indexpreufung und Wertebereichsbeschraenkung auf 0-Constants.REGISTER_LIMIT-1 (0-255)
     def __setitem__(self, index: int, value: int) -> Machine:
         if index < 0 or index >= len(self.memory):
             raise MachineRuntimeError(f'Invalid register index {index}. Must be between 0 and {len(self.memory)-1}')
