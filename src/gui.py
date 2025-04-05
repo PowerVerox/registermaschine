@@ -14,7 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from platform import system
+import ctypes
 
+import pathlib
 import tkinter as tk
 from tkinter import filedialog
 
@@ -35,6 +38,11 @@ class Gui:
         self.root.geometry("800x600")  # Größe des Fensters festlegen
         self.root.resizable(False, False) # Fenstergröße nicht veränderbar
         self.root.title("Registermaschine")
+        self.root.iconphoto(True, tk.PhotoImage(file=pathlib.Path(__file__).parent.resolve() / './icon.png'))  # Icon setzen
+        
+        # Setzt das App-ID für Windows 10/11 Taskleiste
+        if system() == 'Windows':
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('a') 
 
         self.build_main_frame()
         self.build_left_panel()
@@ -298,7 +306,7 @@ class Gui:
         
         # Hole die Zeile, die hervorgehoben werden soll
         line_num = self.datamanager.program_counter.get()
-        self.text_area.tag_add('highlight', f'{line_num}.0', f'{line_num}.0 lineend')
+        self.text_area.tag_add('highlight', f'{line_num}.0', f'{line_num+1}.0')
         self.text_area.tag_configure('highlight', background='yellow')
 
     def update_line_numbers(self, event=None):

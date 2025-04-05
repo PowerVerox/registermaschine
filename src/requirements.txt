@@ -1,2 +1,2 @@
-#python version >= 3.11 cause of StrEnum
+#python version >= 3.11 because of StrEnum
 tk
